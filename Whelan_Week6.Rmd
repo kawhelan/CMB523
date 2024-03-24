@@ -1,7 +1,7 @@
 ---
 title: "Week 6: Benchmarking Notebook"
 output: html_notebook
-author: <YOUR NAME>
+author: Kerrina Whelan
 ---
 
 ## Testing out R Notebooks
@@ -179,8 +179,8 @@ It is simple code to write, but isn't the most efficient.
 
 QUESTION 3: What do i and j represent in the loops above, respectively? 
 
-<"i" represents the row index of sequencing_matrix. "j" represents the column index of sequencing matrix.
-the code checks if the value at each position (i,j) in sequencing_matrix is "a" and if so, replaces it with "A">
+ANSWER 3: "i" represents the row index of sequencing_matrix. "j" represents the column index of sequencing matrix.
+the code checks if the value at each position (i,j) in sequencing_matrix is "a" and if so, replaces it with "A"
 
 
 The code below actually still uses nested loops, but rather than call nrow and ncol within the loop, we call them outside of the loop and store the result.
@@ -214,7 +214,7 @@ The code above should be faster than our first attempt.
 
 QUESTION 4: Since the above code is faster and the only change we made was storing the result of nrow and ncol, rather than calling them in the loop declaration, what does that imply about the number of times the nrow and ncol functions were being called in our first version.
 
-<The "a" wasn't replaced in the second code - am I doing something wrong? I would guess we're only calling the functions once in this code, as opposed to several times in the first code>
+ANSWER 4: The "a" wasn't replaced in the second code - am I doing something wrong? I would guess we're only calling the functions once in this code, as opposed to several times in the first code
 
 
 Alright! Maybe you don't know how to vectorize the whole thing, but remember you can work with whole rows at once and replace the whole row. That is, rather than looking at each cell one-by-one, you could instead look at the whole row at once and replace them all at once. 
@@ -246,7 +246,7 @@ print(time) #why is this not working? Getting error: Error in `-.POSIXt`(end_tim
 
 QUESTION 5: How many times does the loop above execute? 
 
-<Does the loop execute for each row in sequencing_matrix? If so, 1000 times.>
+ANSWER 5: Does the loop execute for each row in sequencing_matrix? If so, 1000 times.
 
 
 Sometimes, though, the devil is in the details. Below is a solution that is entirely vectorized (e.g., uses no loops).
@@ -274,7 +274,7 @@ Depending on some details we don't have time to get into today, Method 4 may be 
 
 QUESTION 6: Which of the methods (1-4) to replace all the lower-case As with upper case A ran fastest? How many times faster was the fastest method than the slowest method?
 
-<I can't tell yet because my timer only works sometimes, even though I used the same code for all>
+ANSWER 6: I can't tell yet because my timer only works sometimes, even though I used the same code for all
 
 
 ## Writing code to solve a problem
