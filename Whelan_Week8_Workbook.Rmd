@@ -1,0 +1,226 @@
+---
+title: "Example Bioinfo Markdown"
+author: "Nic Fisk"
+date: "2024-03-18"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(((((echo = TRUE)))))
+```
+
+## R Review
+
+This workbook is going to take you through much of what we have done for the semester to shake off the spring break rust and get ready for your final projects. In general, you will be given an abstract task that you need to make into R code to solve. 
+
+## Installing dependencies
+
+Many folk will need to use packages to do their final projects. 
+
+TASK 1: Write code that checks to see if the package "ggplot2" is installed in R, and if not, installs it. Then, it loads the "ggplot2" package.
+```{r depends}
+if(!"ggplot2"%in%installed.packages()){install.packages("ggplot2", dependencies = TRUE)}
+
+library(ggplot2)
+
+
+```
+
+## Read in, alter, and write out files
+A lot of people will be working with data in flat files (.txt, .csv, .tsv) for their final project, so lets practice using them.
+
+TASK 2:
+1. Download NU_FPL.csv from brightspace. This is a csv file containing the Pokemon team I won with in a tournament over break.
+2. Write code that reads the csv file as a data frame in R
+3. Write code that capitalizes the first letter of the Pokemon's names (first column)
+4. Sorts the rows in the data frame by the alphabetical value of the 1st column
+5. Writes out the file as a tsv (tab seperated value, that is, delimited/seperated by tabs) named NU_FPL.tsv
+
+TASK 3:
+1. Download PU_Ladder.tsv from brightspace. This is a tsv file containing the Pokemon team I use to ladder in the lowest tier of competitive pokemon (PU, get it? The pokemon allowed all stink!)
+2. Write code that reads the tsv file as a data frame in R
+3. Write code that capitalizes the first letter of the Pokemon's names (first column)
+4. Sorts the rows in the data frame by the alphabetical value of the item column
+5. Writes out the file as a csv (comma seperated value, that is, delimited/seperated by commas) named PU_Ladder.csv
+
+You will have effectively converted a tsv to csv and vice versa!
+
+```{r working with flat files, echo=TRUE}
+
+NU_FPL_data<-read.csv("C:/Users/Kerri/OneDrive/Documents/CMB523/NU_FPL.csv", header = T, sep = ",")
+print(NU_FPL_data)
+
+names<-NU_FPL_data$pokemon #save pokemon names to a new variable
+first_letters<-substr(names,1,1) #get first character of pokemon names
+other_letters<-substr(names,2,nchar(names)) #however long it is, give 2 to however long it is (rest of the pokemon names #w/o first character)
+first_letters<-toupper(first_letters) #capitalize just first letter
+
+#paste(first_letters,other_letters,sep = "") is alternative to paste0
+firsts_are_capped<-paste0(first_letters,other_letters) #concatenates first letter back to the rest
+NU_FPL_data$pokemon<-firsts_are_capped #replaces original column with new data
+
+
+print(NU_FPL_data[order(NU_FPL_data$pokemon),])
+
+#NU_FPL_data$pokemon<-paste0(toupper(substr(NU_FPL_data$pokemon,1,1)),substr(NU_FPL_data$pokemon,2,nchar(NU_FPL_data$pokemon))) can be done on one line for efficiency but they both run the same
+
+write.table(NU_FPL_data,file="NU_FPL_data.tsv",sep = "\t",quote = F,row.names = F)
+
+NU_FPL_data<-read.csv("C:/Users/Kerri/OneDrive/Documents/CMB523/NU_FPL.csv",header = T,sep = "\t")
+
+
+PU_data<-read.delim("C:/Users/Kerri/OneDrive/Documents/CMB523/PU_Ladder.tsv", header = T)
+print(PU_data)
+
+names<-PU_data$pokemon
+first_letters<-substr(names,1,1)
+other_letters<-substr(names,2,nchar(names))
+first_letters<-toupper(first_letters)
+
+firsts_are_capped<-paste0(first_letters,other_letters)
+PU_data$pokemon<-firsts_are_capped
+
+
+print(PU_data[order(PU_data$pokemon),])
+
+#PU_data$pokemon<-paste0(toupper(substr(PU_data$pokemon,1,1)),substr(PU_data$pokemon,2,nchar(PU_data$pokemon))) can be done on one line for efficiency but they both run the same
+
+write.table(PU_data,file="PU_data.tsv",sep = "\t",quote = F,row.names = F)
+PU_data<-read.csv("C:/Users/Kerri/OneDrive/Documents/CMB523/PU_Ladder.tsv",header = T,sep = "\t")
+```
+
+
+## Loops
+
+We are going to code up a program that solves a classic job interview question: make a program that plays the game of fizzbuzz.
+The game has many variations. Basically, you pick 2, usually small, numbers. In this case, we will pick 3 and 5. In real life, the game is played with 2 people, each counting up one number at a time, then passing it to the next person to count the next number. E.g.: 
+
+
+Person 1: 1
+Person 2: 2
+Person 1: 3
+Person 2: 4
+Person 1: 5
+...
+
+
+Simple, right? 
+
+The complexity comes when you hit a number divisible by one of the two numbers you picked (3 and 5 in our case).
+If the current number is divisible by the first number we picked (3), then instead of saying "3", you say "fizz". If the current number is divisible instead by the second number we picked (5), then instead of saying "5", you say "buzz". So the above example should actually be:
+
+Person 1: 1
+Person 2: 2
+Person 1: fizz
+Person 2: 4
+Person 1: buzz
+...
+
+
+If someone accidentally gets it wrong (e.g. says "5" instead of "buzz") they lose. Of course, we are programmers, so our program will always get it right!
+
+
+But wait, what happens if the number is divisible by both 3 and 5? Do you say "fizz" or "buzz"? Easy! You say "fizzbuzz"! Looking again at and extending the example...
+
+
+Person 1: 1
+Person 2: 2
+Person 1: fizz
+Person 2: 4
+Person 1: buzz
+...
+Person 2: 14
+Person 1: fizzbuzz
+Person 2: 16
+...
+
+
+TASK 4: 
+Code the game of fizzbuzz as described above for the numbers 1-266 (fizz number is 3, buzz number is 5)
+In summary:
+
+if the number is divisible by 3, you should print out "fizz", unless it is also divisible by 5, in which case you should print "fizzbuzz"
+
+if the number is divisible by 5, you should print out "buzz", unless it is also divisible by 3, in which case you should print "fizzbuzz"
+
+and if it is not divisible by 3 or 5, you should just print the number.
+
+The intended solution uses a for loop, but it is possible to solve it just fine using a vector solution. Unless you can recognize a vectorized solution right away, I recommend solving it with loops, which you've practiced more!
+
+
+```{r FizzBuzz-35, echo=TRUE}
+numbers_to_check<-1:266
+for(curNum in numbers_to_check){
+  
+  if(curNum%%3==0 & curNum%%5!=0){
+    print("Fizz")
+  }else if(curNum%%5==0 & curNum%%3!=0){
+    print("Buzz")
+  }else if(curNum%%3==0 & curNum%%5==0){
+    print("FizzBuzz")
+  }else{
+    print(curNum)
+  }
+}
+
+
+```
+
+
+If you get this far, I have one more task for you, which represents a very common progression in programming. Above, you solved the game of fizzbuzz for just the numbers 1-266, with 3 as the fizz number and 5 as the buzz number.
+But if you wanted to play with with a different range of numbers or with different fizz or buzz numbers, you'd have to change your code or copy it every time. It'd be much better to make a function that can play fizz buzz no matter the fizz or buzz numbers.
+
+TASK 5: 
+Write a function called fizzbuzz() that takes in 3 arguments
+1. toCheck, a vector of numbers to play the game of fizz buzz (e.g., 1-266 above)
+2. fizzNum, the fizz number
+3. buzzNum, the buzz number
+
+and plays the game of fizz buzz for any valid input.
+
+```{r FizzBuzz, echo=TRUE}
+
+
+fizzbuzz<-function(toCheck,fizzNum,buzzNum){
+  result<-ifelse(
+  
+    tocheck %% fizzNum == 0 & tocheck %% buzzNum == 0,
+    "FizzBuzz", #returns Fizzbuzz if divisible by fizzNum and buzzNum
+    
+    ifelse(
+      tocheck %% fizzNum == 0,
+      "Fizz", #if not divisible by both, returns Fizz if divisible only by fizzNum 
+      
+      ifelse(
+        tocheck %% buzzNum == 0,
+        "Buzz", #if not divisible by fizzNum, returns Buzz if divisible only by buzzNum
+      )
+    )
+  )
+  
+return(result)
+  
+}
+
+#test function using example from above
+toCheck<-1:266
+fizzNum<-3
+buzzNum<-5
+print(fizzbuzz(toCheck, fizzNum, buzzNum))
+
+##what am I forgetting to do here?
+```
+
+Note that you made the assumption that the input was valid, but in real life it'd be good to check to make sure the input is valid (for instance, that the fizz number is not the word "platypus"). 
+
+I'll leave you with this thought (no need to code it, but I may). What happens if you want to extend the game to 3 numbers with associated words (say, fizz, buzz, wazz)? 4? How might you change the above function to work for any number of numbers with any arbitrary words? Forward thinking about problems you might encounter in the future may change how you write code even for the simple case. For instance, your solution for task 5 also solves task 4 for free. 
+
+
+### No need to do this, but Prof Fisk might depending on time
+
+```{r FizzBuzzAll, echo=TRUE}
+fizzbuzzAll<-function(){
+  
+}
+```
+
