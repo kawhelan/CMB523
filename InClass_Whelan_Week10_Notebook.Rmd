@@ -1,0 +1,151 @@
+---
+title: "GATTACA Notebook"
+output: html_notebook
+---
+
+The movie Gattaca discusses themes of genetic determinism and society, which will be manifestly prescient in our genetic counsuling Q and A next week. It also (intentionally, obviously) happens to be a valid DNA string. 
+"GATTACA" which is 7 characters long. We may be interested in the likelihood of finding this specific string of 7 DNA characters in any random DNA sequence of a given length.
+
+Mathematically, we could solve this with graphs, Markov Matrices, or combinatorics. However, this would make us nerds that know math. Instead, we are nerds who know R. We can simulate many random permutations of DNA and determine the probability empirically by checking to see if "GATTACA" appears in that string, no math needed.
+
+TASK 1: 
+We want to know what the probability of "GATTACA" appearing in a 22 character long string of DNA characters is. Lets assume that all 4 bases occur at equal frequencies (i.e., 0.25, 0.25, 0.25, 0.25). 
+Randomly generate 10,000 sequences of DNA of length 22. Check to see if "GATTACA" appears in them, and take the proportion that do have GATTACA to be the probability of it occuring in a random, 22 character long string of DNA.
+
+```{r}
+##fun fact - I saw GATTACA in the theater when I was a senior in high school
+#randDNA <-- you could use a function in outside package, but we don't know how much control we might have over the process
+
+#relevant information about the problem before we get started.
+bases<-c("A","T","C","G")
+numSims<-10000
+stringLength<-22
+probs<-c(0.25,0.25,0.25,0.25) #odds of A, T, C, G
+lookingFor<-"GATTACA"
+#this does 1
+
+aSimulation<-paste0(sample(x = bases,size = stringLength,replace = T,prob = probs),collapse = "")
+
+genDNASeq<-function(theseBases,thisSize,theseProbs){
+  result<-paste0(sample(x = theseBases,size = thisSize,replace = T,prob = theseProbs),collapse = "")
+  return(result)
+}
+
+aSimulation<-genDNASeq(bases,stringLength,probs)
+isInDNA<-grepl(pattern = lookingFor,x =aSimulation ,fixed = T)
+
+
+#simulations<-sapply(X=1:numSims, FUN = genDNASeq,
+#                    theseBases=bases,
+#                    thisSize=stringLength,theseProbs=probs)
+simulations<-sapply(X=1:numSims, function(X){
+  paste0(sample(x = bases,size = stringLength,replace = T,
+                prob = probs),collapse = "")
+  })
+inSimulations<-grepl(pattern = lookingFor,x=simulations)
+howManyHaveSeq<-sum(inSimulations)
+print(howManyHaveSeq/numSims)
+
+# the probability is much lower than I expected 
+```
+Was that more or less than you expected?
+With an observed probability that small, perhaps we should run more simulations to be sure.
+TASK 2: Repeat the simulations but five-hundred thousand times instead of ten-thousand
+
+```{r}
+#randDNA <-- you could use a function in outside package, but we don't know how much control we might have over the process
+
+#relevant information about the problem before we get started.
+bases<-c("A","T","C","G")
+numSims<-500000
+stringLength<-22
+probs<-c(0.25,0.25,0.25,0.25) #odds of A, T, C, G
+lookingFor<-"GATTACA"
+
+
+simulations<-sapply(X=1:numSims, function(X){
+  paste0(sample(x = bases,size = stringLength,replace = T,
+                prob = probs),collapse = "")
+  })
+inSimulations<-grepl(pattern = lookingFor,x=simulations)
+howManyHaveSeq<-sum(inSimulations)
+print(paste0("The sequence occurs: ",(howManyHaveSeq/numSims)*100,"% of the time"))
+```
+You should expect that the larger the number of simulations you do, it should approach the true value, in the same way that a truly fair 6-sided die will approach ~16.67% or a coin 50%. The true value for this question is *just* shy of 0.1% (0.099 or so). So roughly 1-in-a-1000 times, GATTACA will appear.
+
+
+We aren't done yet!
+
+We know that bases are not observed at equal frequencies in different organisms. Prof Fisk knows these values best for humans and the movie GATTACA is about humans, so we will use the proportion the difference bases compose the human genome to answer this question instead.
+
+A: 0.309
+T: 0.294
+G: 0.199
+C: 0.198
+
+TASK 3: Repeat task 2, but with these new values for the relative probabilities of ATCG. Before running, guess if you think it'll be more or less likely in humans than at random that we observe "GATTACA"?
+
+```{r}
+#based on human values, it should be higher in humans than at random
+bases<-c("A","T","C","G")
+numSims<-500000
+stringLength<-22
+probs<-c(0.309,0.294,0.199,0.198) #odds of A, T, C, G
+lookingFor<-"GATTACA"
+
+
+simulations<-sapply(X=1:numSims, function(X){
+  paste0(sample(x = bases,size = stringLength,replace = T,
+                prob = probs),collapse = "")
+  })
+inSimulations<-grepl(pattern = lookingFor,x=simulations)
+howManyHaveSeq<-sum(inSimulations)
+print(paste0("The sequence occurs: ",(howManyHaveSeq/numSims)*100,"% of the time"))
+```
+Is this suprising? If you look at the probability of each individual base and the number of rare bases in GATTACA, perhaps it isn't!
+
+Lastly, we want to know for what length of DNA we start to have a greater than 2.5% chance of observing GATTACA within the string. Again, we could solve this with math. But we ain't math nerds. We can use our intuition to help us narrow our search, though. For instance, we don't need to do anything shorter than 7, because "GATTACA" is 7 long. Likewise, our answer will be longer than our example, which was 22. In principle, we could be even smarter, reasoning that maybe we could try to guess and then search from there. But there is no harm in starting at 23 and moving on until we finish. For the sake of time, I suggest you start at something like 50 or so.
+
+We could (and probably should) use a while loop, but a for loop is fine, too!
+At this juncture, it might also be a good time to take our code and turn it into a function. I may code this live or give it to you to look at.
+
+TASK 4: Run the simulation with an increasing string length to determine when the value exceeds 1% for humans. You may need to lower the number of simulations from 500,000 to something smaller (50 or 100 thousand perhaps) to have it finish in time on your computer
+
+```{r}
+bases<-c("A","T","C","G")
+numSims<-500000
+stringLength<-22
+probs<-c(0.309,0.294,0.199,0.198) #odds of A, T, C, G
+lookingFor<-"GATTACA"
+
+curProb<-0
+curLen<-94
+while(curProb<0.01){
+  
+  stringLength<-curLen
+  
+  simulations<-sapply(X=1:numSims, function(X){
+  paste0(sample(x = bases,size = stringLength,replace = T,
+                prob = probs),collapse = "")
+  })
+  inSimulations<-grepl(pattern = lookingFor,x=simulations)
+  howManyHaveSeq<-sum(inSimulations)
+  curProb<-howManyHaveSeq/numSims
+  print(paste0("The sequence occurs: ",(howManyHaveSeq/numSims)*100,"% of the time"))
+  curLen<-curLen+1
+
+}
+print("answer is:")
+print(curLen-1)
+
+#didn't change the number from 500,000 and it took a looooooong time
+```
+
+Function solution
+```{r}
+#create a function that generates some DNA sequence of a given length
+sequence<-function(length){
+  bases<-c("A","T","G","C")
+}
+
+```
