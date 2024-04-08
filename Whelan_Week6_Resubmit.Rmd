@@ -1,0 +1,310 @@
+---
+title: "Week 6: Benchmarking Notebook"
+output: html_notebook
+author: Kerrina Whelan
+---
+
+## Testing out R Notebooks
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+plot(cars)
+```
+
+Nice! As you can see above, you can make plots render in-place. Anything you run will get saved there, though, including error text, warning text, and other things R prints (like when you download a package).
+Try running the code below!
+```{r}
+print("Prof Fisk is the coolest!")
+warning("That's simply untrue!")
+```
+
+## Benchmarking Pt1
+
+Great! Let's get to the actual work for today!
+We are working with some randomness today. Computers can't actually generate *true* randomness, but they can get pretty darn close. However, because it isn't truly random, we can use something called a seed to make it so that R produces that same randomness in the same order every time, which makes it easier to reproduce results, to pass unit tests, and, yes, for Prof Fisk to grade.
+
+```{r}
+#leave this set to 66 please! But do run this chunk before continuing.
+set.seed(66)
+```
+
+
+Great. We are going to start to examine how different ways of doing the same task can take different amounts of time to perform. 
+
+```{r}
+n= 150000000 #pick a large number for N, around one-hundred million or so
+res = runif(n) + 1
+```
+
+QUESTION 1: What does the above code do?
+
+ANSWER 1: "runif()" is a function that generates random numbers from a uniform distribution over the interval [0,1) by default. Adding 1 shifts the distribution up by 1 unit, so the interval would now be [1,2). The code assigns "res" as a vector with 150 million random numbers ranging from 1 to 2.  
+
+
+We are going to find the sum of all the logs of the number in our vector below. 
+The code to compute the sum already works, so you don't need to touch it. Instead, you need to write code that, using a loop, runs the code 3 times--saving how long it takes to run each time--and obtaining the average of those three attempts to get a sense of how long it takes to run.
+
+```{r}
+#write code that runs this code 3 times using a loop, saves the amount of time it took to run each time, then prints the average
+
+iterations <- 3
+times <- numeric(iterations) #creates vector to store time taken by each of 3 iterations
+
+#run the segment of code 3 times using For Loop 
+start_time <- Sys.time() #records start time and saves
+for(j in 1:iterations){ #loop should iterate 3 times
+  
+  log_sum<- 0 #stores the current sum, starting at 0
+ 
+  #add logarithms of "res" elements for to "log_sum" for each iteration
+  for (i in 1:length(res)){ 
+    log_sum <- log_sum + log(res[i])
+  }
+  end_time <- Sys.time() #records end time and assign to variable
+
+#calculate and store time taken for this iteration
+  times[j]<- end_time - start_time
+
+print(paste(j,"result:", log_sum, "time:", times))
+
+}
+
+#print the average of three runs
+average_time <- mean(times) #calculates average time
+print(average_time)
+
+```
+
+The above code uses a loop and looks at each element (i.e., number) in the vector "res", takes the log of that number, adds it to the current sum (log_sum), and stores the result as the new log_sum.
+
+QUESTION 2:
+What is "i" in the above code? What does it do? What value does it take on the first iteration of the loop? The second? The thirty-third?
+
+ANSWER 2:
+"i" is the variable that takes on the values 1 through the length of the vector "res". It represents the current value in an iteration that is updated in each step of the loop. The value on the first iteration is the first element in the vector, and the value it takes on for each subsequent iteration is the next element in the vector. 
+
+Below is code that does achieves the same result as above, but in a different way. Again, insert code that runs the code 3 times, saving the amount of time it takes to run for each, and then printing the average. This code can be/should be identical or pretty much identical to what you wrote above. 
+
+```{r}
+#write code that runs this code 3 times using a loop, saves the amount of time it took to run each time, then prints the average
+iterations <- 3
+times <- numeric(iterations) #creates vector to store time taken by each of 3 iterations
+
+#run the segment of code 3 times using For Loop 
+start_time <- Sys.time() #records start time and saves
+for(i in 1:iterations){
+
+  log_sum <- sum(log(res))
+  
+  end_time <- Sys.time() #records end time and assign to variable
+
+#calculate and store time taken for this iteration
+  times[j]<- end_time - start_time
+
+print(paste(j,"result:", log_sum, "time:", times))
+
+}
+#print the average of three runs
+average_time <- mean(times) #calculates average time
+print(average_time)
+#print the average of the three runs here
+
+```
+
+
+The above approach uses something called vectorization. In R (and other programming languages supporting vectorized operations), vectorization is almost always faster than the alternative. This means, effectively, minimizing the use of loops when you can--instead using built-in functions or the (l/s)apply family of functions when you can. 
+
+
+The reason why is a bit technical. 
+
+```{r}
+#I don't really expect you to know what this means
+#But it is showing you that R is making a copy of this item at a new memory address
+#When we replace the 5th element in the vector with the number 1. 
+x <- 1:10; tracemem(x); x[5] <- 1
+```
+
+Basically, whenever you index things and replace them in situ, R often actually has to make a whole second copy of whatever it is you are trying to alter. This makes your computer use more memory and adds extra time to make a copy instead of just altering the value, which it can do easier with vectorized approaches. The point is ultimately that we should avoid loops when we can (though if that is the only way you know how to solve it or if the problem is small, it doesn't matter much. For the purposes of your own final projects, for instance, its more important your code works than it is fast.)
+
+## Benchmarking, pt 2
+"OK, Prof Fisk" I hear you say. "We get it, some code runs faster than other code. But the difference in runtime between the loop and vector code for calculating the log sum was not that big, even though there was like one-hundred million data points!"
+
+
+I hear you, and I get it. But, for better and for worse, bioinformatics is a strange beast with big data and big problems, with things only getting bigger. So for the next bits we are going to see how much of a difference this can make and why we have to care about it so much in bioinformatics.
+
+
+Below and for the rest of the examples, I'm simulating an example matrix of data, where the rows are all different samples (n=1000) and the columns all represent different genomic loci (n=2200). The value of each row-column is a DNA base, representing the genotype of that sample at that genomic loci. Note that this means that there are just over 2 million data points in this simulated data--around/at least 50x smaller than the data we worked with in our log-sum example. So, in theory, working with this data should be pretty fast, right? (Note: In the first code block below, I print the first 6 samples and first 6 loci so you can get a sense of the data, but I only do so the one time). Keep in mind that the human genome contains about 3.1 billion loci as you move forwards. 
+
+
+Well, when making the simulated data, I (purposely) made a mistake and "accidentally" made the "A" base lower case and all the others upper case. The code that follows are all different ways to solve that problem. Like above, you will need to benchmark the code. However, you don't need to obtain an average of three runs if you don't want to--a single run will suffice for this part of the notebook.
+
+
+```{r}
+#Method 1
+
+sequencing_matrix <- as.data.frame(matrix(sample(x = c("a","C","T","G"),size = 2200000,replace = T), nrow=1000))
+colnames(sequencing_matrix)<-paste0("Loci",1:ncol(sequencing_matrix))
+rownames(sequencing_matrix)<-paste0("Sample",1:nrow(sequencing_matrix))
+print(sequencing_matrix[1:6,1:6]) # the only time I print this, to give you a sense of the data.
+
+#Your benchmarking code should start here
+
+start_time <- Sys.time()
+
+for(i in 1:nrow(sequencing_matrix)){
+  for(j in 1:ncol(sequencing_matrix)){
+    if(sequencing_matrix[i,j]=="a"){sequencing_matrix[i,j]<-"A"}
+  }
+}
+
+end_time <- Sys.time()
+time <- end_time - start_time
+#and end here.
+#print how long it took to run!
+
+print("After replacement...")
+print(sequencing_matrix[1:6,1:6]) #did it work?
+print(time)
+```
+
+The above code used what is called nested loops. It basically works by looking at the data frame and saying "for each row and each column, find the value that is in that row-column cell. Check to see if it is a lower-case "a" and, if so, replace it with an "A"."
+
+
+It is simple code to write, but isn't the most efficient.
+
+
+QUESTION 3: What do i and j represent in the loops above, respectively? 
+
+ANSWER 3: "i" represents the row index of sequencing_matrix. "j" represents the column index of sequencing matrix.
+the code checks if the value at each position (i,j) in sequencing_matrix is "a" and if so, replaces it with "A"
+
+
+The code below actually still uses nested loops, but rather than call nrow and ncol within the loop, we call them outside of the loop and store the result.
+
+```{r}
+#Method 2
+sequencing_matrix <- as.data.frame(matrix(sample(x = c("a","C","T","G"),size = 2200000,replace = T), nrow=1000))
+colnames(sequencing_matrix)<-paste0("Loci",1:ncol(sequencing_matrix))
+rownames(sequencing_matrix)<-paste0("Sample",1:nrow(sequencing_matrix))
+
+#Your benchmarking code starts here
+start_time <- Sys.time()
+
+nrows<-nrow(sequencing_matrix)
+ncols<-ncol(sequencing_matrix)
+for(i in nrows){
+  for(j in ncols){
+    if(sequencing_matrix[i,j]=="a"){sequencing_matrix[i,j]<-"A"}
+  }
+}
+end_time <- Sys.time()
+time <- end_time - start_time
+#and ends here.
+#print how long it took to run.
+print("After replacement...")
+print(sequencing_matrix[1:6,1:6])
+print(time)
+```
+
+The code above should be faster than our first attempt. 
+
+QUESTION 4: Since the above code is faster and the only change we made was storing the result of nrow and ncol, rather than calling them in the loop declaration, what does that imply about the number of times the nrow and ncol functions were being called in our first version.
+
+ANSWER 4: The "a" wasn't replaced in the second code - am I doing something wrong? I would guess we're only calling the functions once in this code, as opposed to several times in the first code>
+
+
+Alright! Maybe you don't know how to vectorize the whole thing, but remember you can work with whole rows at once and replace the whole row. That is, rather than looking at each cell one-by-one, you could instead look at the whole row at once and replace them all at once. 
+That is what the code below does!
+
+```{r}
+#Method 3
+sequencing_matrix <- as.data.frame(matrix(sample(x = c("a","C","T","G"),size = 2200000,replace = T), nrow=1000))
+colnames(sequencing_matrix)<-paste0("Loci",1:ncol(sequencing_matrix))
+rownames(sequencing_matrix)<-paste0("Sample",1:nrow(sequencing_matrix))
+
+#your benchmarking code starts here
+start_time <- Sys.time()
+
+nrows<-nrow(sequencing_matrix)
+for(i in nrows){
+  sequencing_matrix[i,]<-gsub(pattern = "a",replacement = "A",x = sequencing_matrix[i,],fixed = T)
+}
+#and ends here
+end_time <- Sys.time()
+time <- end_time - start_time
+#print how long it took!
+print(time) 
+
+```
+
+QUESTION 5: How many times does the loop above execute? 
+
+ANSWER 5: Does the loop execute for each row in sequencing_matrix? If so, 1000 times.
+
+
+Sometimes, though, the devil is in the details. Below is a solution that is entirely vectorized (e.g., uses no loops).
+
+```{r}
+#Method 4
+sequencing_matrix <- as.data.frame(matrix(sample(x = c("a","C","T","G"),size = 2200000,replace = T), nrow=1000))
+colnames(sequencing_matrix)<-paste0("Loci",1:ncol(sequencing_matrix))
+rownames(sequencing_matrix)<-paste0("Sample",1:nrow(sequencing_matrix))
+
+#your benchmarking code starts here
+start_time <- Sys.time()
+
+sequencing_matrix<-as.data.frame(lapply(sequencing_matrix, function(x) {gsub("a ", "A", x)}))
+
+#and ends here
+end_time <- Sys.time()
+time <- end_time - start_time
+#print how long it took!
+print(time)
+```
+
+Depending on some details we don't have time to get into today, Method 4 may be slower than Method 3 on your machine, despite being completely vectorized. 
+
+
+QUESTION 6: Which of the methods (1-4) to replace all the lower-case As with upper case A ran fastest? How many times faster was the fastest method than the slowest method?
+
+ANSWER 6: Method 2 ran the fastest (0.0477972 sec). Method 1 was the slowest (1.167572 min.), so method 2 was about 1500 times faster than method 1. 
+
+
+## Writing code to solve a problem
+
+In the code block below, you are tasked with counting the number of the base "T" that occurs in sequencing_matrix. Feel free to google the task, but resist using ChatGPT or other generative aids. You will not be graded on the speed of your solution, nor its elegance. Your only goal is to write code that will count the number of times "T" occurs in the data frame sequencing_matrix. However, your solution should work even if I change the number of rows and columns in sequencing_matrix (e.g., don't "hard code" that there are 1000 rows anywhere--you you need to use the number of rows in your solution, obtain it with the nrows() function!)
+
+
+There is a vectorized, 1-line of code solution, but I don't expect you to find or use it--it is perfectly fine if your code uses nested loops. Feel free to use the code in Methods 1-4 above to help you with your solution.
+
+
+If you are having trouble, it might help you to break down the task into its pieces--doing it on a piece of paper for a small test set for yourself, for instance.
+
+
+Note: You don't need to write any additional code to generate sequencing_matrix. The only reason the matrix was made anew in all the above examples was because we changed all the lower case "a"s to upper case "A"s--if we used the same sequencing_matrix, then the code that came after wouldn't have any lower case "a"s to replace!  
+
+
+TASK: Below, write code that prints the total number of "T"s in the sequencing_matrix.
+
+```{r}
+#Using method 2
+
+nrows <-nrow(sequencing_matrix) #nrows() #obtains number of rows
+ncols<-ncol(sequencing_matrix) #ncols() obtains number of columns
+tcount<-0
+
+for(i in 1:nrows){ #should start loop that iterates over rows of vector
+  for(j in 1:ncols){ #should start loop that iterates over columns of vector
+    if(sequencing_matrix[i,j] == "T") #checks if element in current location is "T"
+      tcount<-tcount+1 #if "T" is found, adds 1 to the value
+  }
+}
+print(tcount)
+#yay!
+```
+
+
+## Submission
+Seperate submission instructions will be uploaded to Brightspace. You'll submit this work by uploading it to GitHub and pasting the link to the repository on Brightspace
